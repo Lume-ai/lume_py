@@ -4,7 +4,7 @@ from lume_py.endpoints.config import get_settings
 
 settings = get_settings()
 
-class Mapper(BaseModel):
+class Mapping(BaseModel):
     id: Optional[str] = None
     status: Optional[str] = None
     created_at: Optional[str] = None
@@ -16,7 +16,7 @@ class Mapper(BaseModel):
         orm_mode = True
 
     @staticmethod
-    async def create(data: List[Dict[str, Any]], name: str, description: str, target_schema: Dict[str, Any]) -> 'Mapper':
+    async def create(data: List[Dict[str, Any]], name: str, description: str, target_schema: Dict[str, Any]) -> 'Mapping':
         """
         Creates a new mapping.
         :param data: The data to map.
@@ -34,10 +34,10 @@ class Mapper(BaseModel):
         response = await settings.client.post('mappings', data=payload)
         response.raise_for_status()
         response_data = response.json()
-        return Mapper(**response_data)
+        return Mapping(**response_data)
 
     @classmethod
-    async def get_by_id(cls, result_id: str) -> 'Mapper':
+    async def get_by_id(cls, result_id: str) -> 'Mapping':
         """
         Retrieves a mapping by its result ID.
         :param result_id: The ID of the result to retrieve the mapping for.
@@ -46,10 +46,10 @@ class Mapper(BaseModel):
         response = await settings.client.get(f'mappings/{result_id}')
         return cls(**response)
 
-    async def get_details(self) -> 'Mapper':
+    async def get_details(self) -> 'Mapping':
         """
         Retrieves the details of this mapping.
         :return: The mapping details.
         """
         response = await settings.client.get(f'mappings/{self.id}')
-        return Mapper(**response)
+        return Mapping(**response)
