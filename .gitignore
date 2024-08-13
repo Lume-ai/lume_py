@@ -4,7 +4,7 @@ dist/
 .env
 .DS_Store
 *.ipynb
-
+/lume_py/lume_py.git
 # Ignore Python cache files
 __pycache__/
 *.py[cod]

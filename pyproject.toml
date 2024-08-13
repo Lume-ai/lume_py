@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lume_py"
-version = "0.1.22"
+version = "0.1.23"
 description = "An SDK to connect to the Lume API"
 authors = ["Aryan Panda <aryan@lume.ai>"]
 license = "MIT"
@@ -14,7 +14,7 @@ pydantic_settings = "^2.4.0"
 
 
 [tool.poetry.urls]
-repository = "https://github.com/Lume-ai/lume-python"
+repository = "https://github.com/Lume-ai/lume_"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
