@@ -63,7 +63,7 @@ class PipelinePopulateSheets(BaseModel):
     class Config:
         orm_mode = True
         
-        
+
 class Pipeline(BaseModel):
     id: Optional[str] = None
     user_id: Optional[str] = None
@@ -139,7 +139,7 @@ class Pipeline(BaseModel):
         response = await settings.client.get(f'pipelines/{self.id}/mapper')
         if response is None:
             raise ValueError("No mapper found for this pipeline, consider running the job first.")
-        return Mapper(**response)
+        return response
     
 
     async def learn(self, target_property_names: Optional[List[str]] = None) -> None:
