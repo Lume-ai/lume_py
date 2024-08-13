@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from lume_py.endpoints.config import get_settings
 from lume_py.endpoints.jobs import Job
 from lume_py.endpoints.workshop import WorkShop
-from lume_py.endpoints.mappers import Mapper
+from lume_py.endpoints.mappers import Mapping
 
 settings = get_settings()
 
@@ -148,21 +148,21 @@ class Pipeline(BaseModel):
         payload = {'target_field_names': target_property_names}
         await settings.client.post(f'pipelines/{self.id}/learn', payload)
 
-    async def run_pipeline(self, source_data: List[Dict[str, Any]], immediate: bool = False) -> Mapper:
+    async def run_pipeline(self, source_data: List[Dict[str, Any]], immediate: bool = False) -> Mapping:
         if not self.id:
             raise ValueError("Pipeline ID is required for running the pipeline.")
         response = await settings.client.post(f'pipeline/{self.id}/run', {'data': source_data})
         status = response['status']
         result_id = response['id']
         if immediate is True:
-            return Mapper(**response)
+            return Mapping(**response)
         else:
             while status in ['queued', 'running']:
                 result = await settings.client.get(f'mappings/{result_id}')
                 status = result['status']
             if result is None:
                 raise ValueError("No mapper found for this pipeline, consider running the job first.")
-            return Mapper(**result)
+            return Mapping(**result)
 
     async def upload_sheets(self, file_path: str, pipeline_map_list: Optional[str] = '', second_table_row_to_insert: Optional[int] = None):
         with open(file_path, 'rb') as file:
