@@ -1,0 +1,279 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "product": {
+            "type": "object",
+            "properties": {
+                "product_make_model": {
+                    "type": "string",
+                    "description": "A formatted string of the product's make, model, and version, separated by commas."
+                },
+                "body_html": {
+                    "type": "string",
+                    "description": "HTML-formatted content describing the product in detail."
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Timestamp indicating when the product was initially created."
+                },
+                "handle": {
+                    "type": "string",
+                    "description": "Unique identifier string for the product."
+                },
+                "id": {
+                    "type": "integer",
+                    "description": "The numeric ID that uniquely identifies the product."
+                },
+                "currency": {
+                    "type": ["string", "null"],
+                    "description": "Currency code associated with the product's prices."
+                },
+                "description": {
+                    "type": ["string", "null"],
+                    "description": "Plain text description of the product, read-only."
+                },
+                "name": {
+                    "type": ["string", "null"],
+                    "description": "The name of the product."
+                },
+                "weight": {
+                    "type": ["number", "null"],
+                    "description": "The product's weight."
+                },
+                "sku": {
+                    "type": ["string", "null"],
+                    "description": "The Stock Keeping Unit (SKU) of the product, used only if variants are not defined."
+                },
+                "cost_price": {
+                    "type": ["string", "null"],
+                    "description": "The default cost price for the product."
+                },
+                "product_type": {
+                    "type": ["string", "null"],
+                    "description": "The ID representing the product type."
+                },
+                "seller": {
+                    "type": ["string", "null"],
+                    "description": "The ID of the seller associated with the product."
+                },
+                "image_url": {
+                    "type": ["string", "null"],
+                    "description": "The URL of the product's image."
+                },
+                "published_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Timestamp indicating when the product was published."
+                },
+                "published_scope": {
+                    "type": ["string", "null"],
+                    "enum": [null, "global", "web", "point_of_sale"],
+                    "description": "Scope of the product's publication, e.g., global, web, or point_of_sale."
+                },
+                "status": {
+                    "type": ["string", "null"],
+                    "enum": [null, "active", "archive", "draft"],
+                    "description": "The product's current status."
+                },
+                "tags": {
+                    "type": "string",
+                    "description": "Comma-separated list of tags associated with the product."
+                },
+                "template_suffix": {
+                    "type": "string",
+                    "description": "Suffix for a custom template used for displaying the product, or null if none."
+                },
+                "title": {
+                    "type": "string",
+                    "description": "The title of the product."
+                },
+                "updated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Timestamp indicating when the product details were last updated."
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer",
+                            "description": "Numeric ID that uniquely identifies the image."
+                        },
+                        "created_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Timestamp when the image was created."
+                        },
+                        "updated_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Timestamp when the image was last updated."
+                        },
+                        "width": {
+                            "type": "integer",
+                            "description": "Width of the image in pixels."
+                        },
+                        "height": {
+                            "type": "integer",
+                            "description": "Height of the image in pixels."
+                        },
+                        "image_url": {
+                            "type": ["string", "null"],
+                            "format": "uri",
+                            "description": "URL pointing to the image."
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "created_at",
+                        "updated_at",
+                        "width",
+                        "height",
+                        "image_url"
+                    ]
+                }
+            },
+            "required": [
+                "body_html",
+                "created_at",
+                "handle",
+                "id",
+                "currency",
+                "description",
+                "name",
+                "weight",
+                "sku",
+                "cost_price",
+                "product_type",
+                "seller",
+                "image_url",
+                "published_at",
+                "published_scope",
+                "status",
+                "title",
+                "updated_at",
+                "image"
+            ]
+        },
+        "metadata": {
+            "type": "object",
+            "description": "Metadata associated with the product.",
+            "properties": {
+                "vendor_phone": {
+                    "type": "string",
+                    "description": "Phone number of the vendor."
+                },
+                "vendor_industry": {
+                    "type": ["string", "null"],
+                    "enum": [
+                        null,
+                        "Retail",
+                        "Technology",
+                        "Healthcare",
+                        "Finance",
+                        "Education",
+                        "Manufacturing",
+                        "Fashion",
+                        "Other"
+                    ],
+                    "description": "Industry of the vendor. Select 'Other' if none apply."
+                },
+                "vendor_address": {
+                    "type": "object",
+                    "description": "Address details of the vendor.",
+                    "properties": {
+                        "city": {
+                            "type": ["string", "null"],
+                            "description": "City of the vendor's address."
+                        },
+                        "country": {
+                            "type": ["string", "null"],
+                            "description": "Country of the vendor's address."
+                        },
+                        "line1": {
+                            "type": ["string", "null"],
+                            "description": "First line of the vendor's address."
+                        },
+                        "line2": {
+                            "type": ["string", "null"],
+                            "description": "Second line of the vendor's address."
+                        },
+                        "postal_code": {
+                            "type": ["string", "null"],
+                            "description": "Postal code of the vendor's address."
+                        },
+                        "state": {
+                            "type": ["string", "null"],
+                            "description": "State or region of the vendor's address."
+                        }
+                    }
+                },
+                "transaction_full_address": {
+                    "type": "string",
+                    "description": "Full address associated with a transaction."
+                }
+            },
+            "required": [
+                "vendor_phone",
+                "vendor_industry",
+                "vendor_address",
+                "transaction_full_address"
+            ]
+        },
+        "statistics": {
+            "type": "object",
+            "description": "Statistics related to the product.",
+            "properties": {
+                "total_sales": {
+                    "type": ["number", "null"],
+                    "description": "Total sales of the product measured by transaction volume."
+                },
+                "largest_transaction_delta": {
+                    "type": ["number", "null"],
+                    "description": "The largest difference between the highest and lowest transaction totals."
+                },
+                "largest_transaction_cost": {
+                    "type": ["number", "null"],
+                    "description": "The highest recorded transaction cost for the product."
+                },
+                "lowest_transaction_cost": {
+                    "type": ["number", "null"],
+                    "description": "The lowest recorded transaction cost for the product."
+                },
+                "average_transaction_cost": {
+                    "type": ["number", "null"],
+                    "description": "The average cost per transaction for the product."
+                }
+            }
+        },
+        "reviews": {
+            "type": ["object", "null"],
+            "items": {
+                "type": "object",
+                "properties": {
+                    "review_id": {
+                        "type": "integer",
+                        "description": "Unique identifier for a review."
+                    },
+                    "author": {
+                        "type": "string",
+                        "description": "Name of the person who wrote the review."
+                    },
+                    "rating": {
+                        "type": "integer",
+                        "description": "Rating given by the reviewer."
+                    },
+                    "comment": {
+                        "type": "string",
+                        "description": "Content of the review."
+                    }
+                },
+                "required": ["review_id", "author", "rating"]
+            },
+            "description": "Customer reviews associated with the product."
+        }
+    },
+    "required": ["product", "metadata", "statistics", "reviews"]
+}

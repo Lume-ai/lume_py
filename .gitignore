@@ -1,0 +1,17 @@
+dist/
+
+# ignore the .env file
+.env
+.DS_Store
+*.ipynb
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+
+# Ignore pytest cache files
+.pytest_cache/
+poetry.lock
