@@ -133,7 +133,7 @@ class Pipeline(BaseModel):
             raise ValueError("Pipeline ID is required for fetching target schema.")
         return await settings.client.get(f'pipelines/{self.id}/target_schema')
 
-    async def get_mapper(self) -> Dict[str, Any]:
+    async def get_mapper(self) -> List[Dict[str, Any]]:
         if not self.id:
             raise ValueError("Pipeline ID is required for fetching mapper.")
         response = await settings.client.get(f'pipelines/{self.id}/mapper')
