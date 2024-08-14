@@ -15,13 +15,27 @@ class Target(BaseModel):
         orm_mode = True
 
     @staticmethod
-    async def get(page: int = 1, size: int = 50) -> List['Target']:
+    async def get(page: int = 1, size: int = 50, all: bool = False) -> List['Target']:
         """
-        Retrieves all target schemas.
-        :return: List of target schemas.
+        Retrieves all target schemas, iterating through pages until all schemas are retrieved.
+        :param page: The page number to fetch (optional, defaults to 1).
+        :param size: The number of items per page (optional, defaults to 50).
+        :param all: Whether to fetch all pages of target schemas (optional, defaults to False).
+        :return: A list of target schemas.
         """
-        response = await settings.client.fetch_paginated_data('target_schemas', page, size)
-        return [Target(**item) for item in response['items']]
+        targets = []
+        if all:
+            while True:
+                response = await settings.client.fetch_paginated_data('target_schemas', page, size)
+                targets.extend([Target(**item) for item in response['items']])
+                if not response['items'] or len(response['items']) < size:
+                    break
+                page += 1
+        else:
+            response = await settings.client.fetch_paginated_data('target_schemas', page, size)
+            targets.extend([Target(**item) for item in response['items']])
+        
+        return targets
 
     @staticmethod
     async def create(target_schema: Dict[str, Any], name: str = "string",  filename: str = "string") -> 'Target':
