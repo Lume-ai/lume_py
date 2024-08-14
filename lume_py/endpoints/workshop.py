@@ -19,17 +19,28 @@ class WorkShop(BaseModel):
 
     class Config:
         orm_mode = True
-
     @staticmethod
-    async def get_workshops(page: int = 1, size: int = 50) -> List['WorkShop']:
+    async def get_workshops(page: int = 1, size: int = 50, all: bool = False) -> List['WorkShop']:
         """
-        Fetches all workshop data.
+        Fetches all workshop data, iterating through pages until all workshops are retrieved.
         :param page: The page number to fetch (optional, defaults to 1).
         :param size: The number of items per page (optional, defaults to 50).
-        :return: A paginated response of workshops.
+        :param all: Whether to fetch all pages of workshops (optional, defaults to False).
+        :return: A list of workshops.
         """
-        response = await settings.client.fetch_paginated_data('workshops', page, size)
-        return [WorkShop(**item) for item in response['items']]
+        workshops = []
+        if all:
+            while True:
+                response = await settings.client.fetch_paginated_data('workshops', page, size)
+                workshops.extend([WorkShop(**item) for item in response['items']])
+                if not response['items'] or len(response['items']) < size:
+                    break
+                page += 1
+        else:
+            response = await settings.client.fetch_paginated_data('workshops', page, size)
+            workshops.extend([WorkShop(**item) for item in response['items']])
+        
+        return workshops
 
     @classmethod
     async def get_by_id(cls, workshop_id: str) -> 'WorkShop':
@@ -136,15 +147,27 @@ class WorkShop(BaseModel):
         response = await settings.client.post(f'workshops/{self.id}/deploy')
         return WorkShop(**response)
 
-    async def get_results(self, page: int = 1, size: int = 50) -> List[Result]:
+    async def get_results(self, page: int = 1, size: int = 50, all: bool = False) -> List[Result]:
         """
-        Retrieves results associated with a specific workshop.
+        Retrieves results associated with a specific workshop, iterating through pages until all results are retrieved.
         :param page: The page number to fetch (optional, defaults to 1).
         :param size: The number of items per page (optional, defaults to 50).
-        :return: A paginated response of results.
+        :param all: Whether to fetch all pages of results (optional, defaults to False).
+        :return: A list of results.
         """
-        response = await settings.client.fetch_paginated_data(f'workshops/{self.id}/results', page, size)
-        return [Result(**item) for item in response['items']]
+        results = []
+        if all:
+            while True:
+                response = await settings.client.fetch_paginated_data(f'workshops/{self.id}/results', page, size)
+                results.extend([Result(**item) for item in response['items']])
+                if not response['items'] or len(response['items']) < size:
+                    break
+                page += 1
+        else:
+            response = await settings.client.fetch_paginated_data(f'workshops/{self.id}/results', page, size)
+            results.extend([Result(**item) for item in response['items']])
+
+        return results
 
     async def get_target_schema(self) -> Dict[str, Any]:
         """
@@ -152,3 +175,12 @@ class WorkShop(BaseModel):
         :return: The target schema for the workshop.
         """
         return await settings.client.get(f'workshops/{self.id}/target_schema')
+
+    
+    async def get_mapping(self) -> List[Dict[str, Any]]:
+        """
+        Retreives the mappings transformations associated with the workshop.
+        Returns:
+            List[Dict[str, Any]]: The mapping
+        """
+        return await settings.client.get(f'workshops/{self.id}/mapper')

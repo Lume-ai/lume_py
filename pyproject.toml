@@ -14,7 +14,7 @@ pydantic_settings = "^2.4.0"
 
 
 [tool.poetry.urls]
-repository = "https://github.com/Lume-ai/lume_"
+repository = "https://github.com/Lume-ai/lume_py"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
