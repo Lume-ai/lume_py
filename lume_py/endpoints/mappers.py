@@ -31,7 +31,7 @@ class Mapping(BaseModel):
             'description': description,
             'target_schema': target_schema
         }
-        response = await settings.client.post('mappings', data=payload)
+        response = await settings.client.post('mapping', data=payload)
         response.raise_for_status()
         response_data = response.json()
         return Mapping(**response_data)
