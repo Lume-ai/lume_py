@@ -2,7 +2,7 @@ import httpx
 from typing import Any, Dict, Optional
 
 class Lume:
-    def __init__(self, api_key: str, base_url: str = 'https://staging.lume-terminus.com/crud/'):
+    def __init__(self, api_key: str, base_url: str = 'https://api.lume.ai/'):
         self.api_key = api_key
         self.base_url = base_url
         self.client = httpx.AsyncClient(

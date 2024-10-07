@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "lume_py"
-version = "0.1.25"
+version = "0.1.28"
 description = "An SDK to connect to the Lume API"
-authors = ["Aryan Panda <aryan@lume.ai>"]
+authors = ["Aryan Panda <aryan@lume.ai>", "Robert Ross <robert@lume.ai>"]
 license = "MIT"
 readme = "README.md"
 
