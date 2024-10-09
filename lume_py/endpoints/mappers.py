@@ -1,6 +1,7 @@
 from typing import Any, Optional, List, Dict
 from pydantic import BaseModel
 from lume_py.endpoints.config import get_settings
+from http import HTTPMethod
 
 settings = get_settings()
 
@@ -26,15 +27,15 @@ class Mapping(BaseModel):
         :return: The created mapping.
         """
         payload = {
-            'data': data,
-            'name': name,
-            'description': description,
-            'target_schema': target_schema
+            "data": data,
+            "name": name,
+            "description": description,
+            "target_schema": target_schema,
         }
-        response = await settings.client.post('mapping', data=payload)
-        response.raise_for_status()
-        response_data = response.json()
-        return Mapping(**response_data)
+        response = await settings.client.request(
+            method=HTTPMethod.POST, url="mapping", json=payload
+        )
+        return Mapping(**response)
 
     @classmethod
     async def get_by_id(cls, result_id: str) -> 'Mapping':
@@ -43,7 +44,9 @@ class Mapping(BaseModel):
         :param result_id: The ID of the result to retrieve the mapping for.
         :return: The mapping details.
         """
-        response = await settings.client.get(f'mappings/{result_id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"mappings/{result_id}"
+        )
         return cls(**response)
 
     async def get_details(self) -> 'Mapping':
@@ -51,5 +54,7 @@ class Mapping(BaseModel):
         Retrieves the details of this mapping.
         :return: The mapping details.
         """
-        response = await settings.client.get(f'mappings/{self.id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"mappings/{self.id}"
+        )
         return Mapping(**response)

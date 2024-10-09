@@ -1,6 +1,8 @@
 from typing import Any, Optional, List, Dict
 from pydantic import BaseModel
 from lume_py.endpoints.config import get_settings
+from .sdk.api_client import Pagination
+from http import HTTPMethod
 import asyncio
 
 
@@ -35,18 +37,22 @@ class Result(BaseModel):
         :return: A list of results.
         """
         results = []
+        pagination = Pagination(page=page, size=size)
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data('results', page, size)
-                results.extend([Result(**item) for item in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET, url="results", pagination=pagination
+                )
+                results.extend([Result(**item) for item in response["items"]])
+                if not response["items"] or len(response["items"]) < size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data('results', page, size)
-            results.extend([Result(**item) for item in response['items']])
+            response = await settings.client.request(
+                method=HTTPMethod.GET, url="results", pagination=pagination
+            )
+            results.extend([Result(**item) for item in response["items"]])
         return results
-            
 
     @classmethod
     async def get_by_id(cls, result_id: str) -> 'Result':
@@ -55,7 +61,9 @@ class Result(BaseModel):
         :param result_id: The ID of the result to retrieve.
         :return: The result details.
         """
-        response = await settings.client.get(f'results/{result_id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"results/{result_id}"
+        )
         return cls(**response)
 
     async def get_details(self) -> 'Result':
@@ -63,7 +71,9 @@ class Result(BaseModel):
         Retrieves the details of this result.
         :return: The result details.
         """
-        response = await settings.client.get(f'results/{self.id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"results/{self.id}"
+        )
         return Result(**response)
 
     async def get_spec(self) -> Dict[str, Any]:
@@ -71,7 +81,9 @@ class Result(BaseModel):
         Retrieves specifications associated with a specific result.
         :return: The specifications.
         """
-        spec = await settings.client.get(f'results/{self.id}/spec')
+        spec = await settings.client.request(
+            method=HTTPMethod.GET, url=f"results/{self.id}/spec"
+        )
         if spec:
             return spec
         else:
@@ -84,18 +96,25 @@ class Result(BaseModel):
         :return: The list of mappings.
         """
         mappings = []
-        page = 1
-        size = 50
+        pagination = Pagination()
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data(f'results/{self.id}/mappings', page, size)
-                mappings.extend([ResultMapper(**item) for item in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET,
+                    url=f"results/{self.id}/mappings",
+                    pagination=pagination,
+                )
+                mappings.extend([ResultMapper(**item) for item in response["items"]])
+                if not response["items"] or len(response["items"]) < pagination.size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data(f'results/{self.id}/mappings', page, size)
-            mappings.extend([ResultMapper(**item) for item in response['items']])
+            response = await settings.client.request(
+                method=HTTPMethod.GET,
+                url=f"results/{self.id}/mappings",
+                pagination=pagination,
+            )
+            mappings.extend([ResultMapper(**item) for item in response["items"]])
         return mappings
 
     async def generate_confidence_scores(self, timeout: int = 10):
@@ -106,11 +125,15 @@ class Result(BaseModel):
         """
 
         async def fetch_confidence_scores():
-            confidence = await settings.client.post(f'results/{self.id}/confidence')
-            status = confidence['status']
-            while status in ['pending', 'running', 'queued']:
-                confidence = await settings.client.get(f'results/{self.id}/confidence')
-                status = confidence['status']
+            confidence = await settings.client.request(
+                method=HTTPMethod.POST, url=f"results/{self.id}/confidence"
+            )
+            status = confidence["status"]
+            while status in ["pending", "running", "queued"]:
+                confidence = await settings.client.request(
+                    method=HTTPMethod.GET, url=f"results/{self.id}/confidence"
+                )
+                status = confidence["status"]
             return confidence
 
         try:
@@ -120,13 +143,10 @@ class Result(BaseModel):
 
         return confidence
 
-    
     async def get_failed(self):
         results = await self.get_results()
         res = []
         for result in results:
-            if result.status == 'failed' or result.status == 'needs review':
+            if result.status == "failed" or result.status == "needs review":
                 res.append(result)
         return res
-    
-        

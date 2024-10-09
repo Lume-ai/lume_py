@@ -5,6 +5,8 @@ from lume_py.endpoints.config import get_settings
 from lume_py.endpoints.jobs import Job
 from lume_py.endpoints.workshop import WorkShop
 from lume_py.endpoints.mappers import Mapping
+from .sdk.api_client import Pagination
+from http import HTTPMethod
 
 settings = get_settings()
 
@@ -83,16 +85,21 @@ class Pipeline(BaseModel):
         :return: A list of pipelines.
         """
         pipelines = []
+        pagination = Pagination(page=page, size=size)
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data('pipelines', page, size)
-                pipelines.extend([Pipeline(**item) for item in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET, url="pipelines", pagination=pagination
+                )
+                pipelines.extend([Pipeline(**item) for item in response["items"]])
+                if not response["items"] or len(response["items"]) < size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data('pipelines', page, size)
-            pipelines.extend([Pipeline(**item) for item in response['items']])
+            response = await settings.client.request(
+                method=HTTPMethod.GET, url="pipelines", pagination=pagination
+            )
+            pipelines.extend([Pipeline(**item) for item in response["items"]])
         return pipelines
 
     @classmethod
@@ -110,7 +117,9 @@ class Pipeline(BaseModel):
             "target_schema": target_schema,
             "description": description
         }
-        response = await settings.client.post('pipelines', payload)
+        response = await settings.client.request(
+            method=HTTPMethod.POST, url="pipelines", json=payload
+        )
         return cls(**response)
 
     @classmethod
@@ -121,7 +130,9 @@ class Pipeline(BaseModel):
         :param pipeline_id: The ID of the pipeline to fetch.
         :return: The pipeline instance.
         """
-        response = await settings.client.get(f'pipelines/{pipeline_id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"pipelines/{pipeline_id}"
+        )
         return cls(**response)
 
     async def update(self, name: str, description: str) -> 'Pipeline':
@@ -135,8 +146,10 @@ class Pipeline(BaseModel):
         """
         if not self.id:
             raise ValueError("Pipeline ID is required for updating.")
-        payload = {'name': name, 'description': description}
-        response = await settings.client.put(f'pipelines/{self.id}', payload)
+        payload = {"name": name, "description": description}
+        response = await settings.client.request(
+            method=HTTPMethod.PUT, url=f"pipelines/{self.id}", json=payload
+        )
         return Pipeline(**response)
 
     async def delete(self) -> None:
@@ -147,7 +160,9 @@ class Pipeline(BaseModel):
         """
         if not self.id:
             raise ValueError("Pipeline ID is required for deletion.")
-        await settings.client.delete(f'pipelines/{self.id}')
+        await settings.client.request(
+            method=HTTPMethod.DELETE, url=f"pipelines/{self.id}"
+        )
 
     async def create_job(self, source_data: List[Dict[str, Any]]) -> Job:
         """
@@ -159,7 +174,11 @@ class Pipeline(BaseModel):
         """
         if not self.id:
             raise ValueError("Pipeline ID is required for creating a job.")
-        response = await settings.client.post(f'pipelines/{self.id}/jobs', {'data': source_data})
+        response = await settings.client.request(
+            method=HTTPMethod.POST,
+            url=f"pipelines/{self.id}/jobs",
+            json={"data": source_data},
+        )
         return Job(**response)
 
     async def get_workshops(self, page: int = 1, size: int = 50, all: bool = False) -> List[WorkShop]:
@@ -174,19 +193,30 @@ class Pipeline(BaseModel):
         """
         if not self.id:
             raise ValueError("Pipeline ID is required for fetching workshops.")
-        
+
         workshops = []
+        pagination = Pagination(page=page, size=size)
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data(f'pipelines/{self.id}/workshops', page, size)
-                workshops.extend([WorkShop(**workshop) for workshop in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET,
+                    url=f"pipelines/{self.id}/workshops",
+                    pagination=pagination,
+                )
+                workshops.extend(
+                    [WorkShop(**workshop) for workshop in response["items"]]
+                )
+                if not response["items"] or len(response["items"]) < size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data(f'pipelines/{self.id}/workshops', page, size)
-            workshops.extend([WorkShop(**workshop) for workshop in response['items']])
-        
+            response = await settings.client.request(
+                method=HTTPMethod.GET,
+                url=f"pipelines/{self.id}/workshops",
+                pagination=pagination,
+            )
+            workshops.extend([WorkShop(**workshop) for workshop in response["items"]])
+
         return workshops
 
     async def create_workshop(self) -> WorkShop:
@@ -198,7 +228,9 @@ class Pipeline(BaseModel):
         """
         if not self.id:
             raise ValueError("Pipeline ID is required for creating a workshop.")
-        response = await settings.client.post(f'pipelines/{self.id}/workshops')
+        response = await settings.client.request(
+            method=HTTPMethod.POST, url=f"pipelines/{self.id}/workshops"
+        )
         return WorkShop(**response)
 
     async def get_target_schema(self) -> Dict[str, Any]:
@@ -210,7 +242,9 @@ class Pipeline(BaseModel):
         """
         if not self.id:
             raise ValueError("Pipeline ID is required for fetching target schema.")
-        return await settings.client.get(f'pipelines/{self.id}/target_schema')
+        return await settings.client.request(
+            method=HTTPMethod.GET, url=f"pipelines/{self.id}/target_schema"
+        )
 
     async def get_mapper(self) -> List[Dict[str, Any]]:
         """
@@ -221,7 +255,9 @@ class Pipeline(BaseModel):
         """
         if not self.id:
             raise ValueError("Pipeline ID is required for fetching mapper.")
-        response = await settings.client.get(f'pipelines/{self.id}/mapper')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"pipelines/{self.id}/mapper"
+        )
         if response is None:
             raise ValueError("No mapper found for this pipeline, consider running the job first.")
         return response
@@ -236,7 +272,9 @@ class Pipeline(BaseModel):
         if not self.id:
             raise ValueError("Pipeline ID is required for learning.")
         payload = {'target_field_names': target_property_names}
-        await settings.client.post(f'pipelines/{self.id}/learn', payload)
+        await settings.client.request(
+            method=HTTPMethod.POST, url=f"pipelines/{self.id}/learn", json=payload
+        )
 
     async def run_pipeline(self, source_data: List[Dict[str, Any]], immediate: bool = False) -> Mapping:
         """
@@ -249,14 +287,20 @@ class Pipeline(BaseModel):
         """
         if not self.id:
             raise ValueError("Pipeline ID is required for running the pipeline.")
-        response = await settings.client.post(f'pipeline/{self.id}/run', {'data': source_data})
+        response = await settings.client.request(
+            method=HTTPMethod.POST,
+            url=f"pipeline/{self.id}/run",
+            json={"data": source_data},
+        )
         status = response['status']
         result_id = response['id']
         if immediate is True:
             return Mapping(**response)
         else:
             while status in ['queued', 'running']:
-                result = await settings.client.get(f'mappings/{result_id}')
+                result = await settings.client.request(
+                    method=HTTPMethod.GET, url=f"mappings/{result_id}"
+                )
                 status = result['status']
             if result is None:
                 raise ValueError("No mapper found for this pipeline, consider running the job first.")
@@ -292,7 +336,11 @@ class Pipeline(BaseModel):
         :return: Response JSON from the populate endpoint.
         """
         sheets_data = PipelinePopulateSheets(pipeline_ids=pipeline_ids, populate_excel_payload=populate_excel_payload, file_type=file_type)
-        return await settings.client.post('pipelines/populate/sheets', sheets_data.model_dump())
+        return await settings.client.request(
+            method=HTTPMethod.POST,
+            url="pipelines/populate/sheets",
+            json=sheets_data.model_dump(),
+        )
 
     async def get_images(self) -> Dict[str, Any]:
         """
@@ -303,4 +351,6 @@ class Pipeline(BaseModel):
         """
         if not self.id:
             raise ValueError("Pipeline ID is required for fetching images.")
-        return await settings.client.post(f'pipelines/{self.id}/populate/images')
+        return await settings.client.request(
+            method=HTTPMethod.POST, url=f"pipelines/{self.id}/populate/images"
+        )

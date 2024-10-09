@@ -1,6 +1,8 @@
 from typing import List, Dict, Any, Optional
 from lume_py.endpoints.config import get_settings
 from lume_py.endpoints.results import Result
+from .sdk.api_client import Pagination
+from http import HTTPMethod
 
 from pydantic import BaseModel
 
@@ -29,17 +31,22 @@ class WorkShop(BaseModel):
         :return: A list of workshops.
         """
         workshops = []
+        pagination = Pagination(page=page, size=size)
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data('workshops', page, size)
-                workshops.extend([WorkShop(**item) for item in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET, url="workshops", pagination=pagination
+                )
+                workshops.extend([WorkShop(**item) for item in response["items"]])
+                if not response["items"] or len(response["items"]) < size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data('workshops', page, size)
-            workshops.extend([WorkShop(**item) for item in response['items']])
-        
+            response = await settings.client.request(
+                method=HTTPMethod.GET, url="workshops", pagination=pagination
+            )
+            workshops.extend([WorkShop(**item) for item in response["items"]])
+
         return workshops
 
     @classmethod
@@ -49,7 +56,9 @@ class WorkShop(BaseModel):
         :param workshop_id: The ID of the workshop to fetch details for.
         :return: Workshop details.
         """
-        response = await settings.client.get(f'workshops/{workshop_id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"workshops/{workshop_id}"
+        )
         return cls(**response)
 
     async def get_details(self) -> 'WorkShop':
@@ -57,7 +66,9 @@ class WorkShop(BaseModel):
         Retrieves the details of this workshop.
         :return: The workshop details.
         """
-        response = await settings.client.get(f'workshops/{self.id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"workshops/{self.id}"
+        )
         return WorkShop(**response)
 
     async def delete(self) -> Dict[str, Any]:
@@ -65,7 +76,9 @@ class WorkShop(BaseModel):
         Deletes a workshop with the specified ID.
         :return: Success message on successful deletion.
         """
-        return await settings.client.delete(f'workshops/{self.id}')
+        return await settings.client.request(
+            method=HTTPMethod.DELETE, url=f"workshops/{self.id}"
+        )
 
     async def run_mapper(self, mapper: List[Dict[str, Any]], immediate: bool = False) -> Dict[str, Any]:
         """
@@ -73,15 +86,21 @@ class WorkShop(BaseModel):
         :param mapper: Details required for running the mapper.
         :return: The result of running the mapper.
         """
-        response = await settings.client.post(f'workshops/{self.id}/mapper/run', data={'mapper': mapper})
-        response_status = response['status']
-        
+        response = await settings.client.request(
+            method=HTTPMethod.POST,
+            url=f"workshops/{self.id}/mapper/run",
+            json={"mapper": mapper},
+        )
+        response_status = response["status"]
+
         if immediate:
             return Result(**response)
         else:
-            while response_status in ['queued', 'running']:
-                response = await settings.client.get(f'results/{response["id"]}')
-                response_status = response['status']
+            while response_status in ["queued", "running"]:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET, url=f'results/{response["id"]}'
+                )
+                response_status = response["status"]
             return Result(**response)
 
     async def run_sample(self, sample: Dict[str, Any], immediate: bool = False) -> Dict[str, Any]:
@@ -90,15 +109,21 @@ class WorkShop(BaseModel):
         :param sample: Details required for running the sample.
         :return: The result of running the sample.
         """
-        response = await settings.client.post(f'workshops/{self.id}/sample/run', data={'sample': sample})
-        response_status = response['status']
-        
+        response = await settings.client.request(
+            method=HTTPMethod.POST,
+            url=f"workshops/{self.id}/sample/run",
+            json={"sample": sample},
+        )
+        response_status = response["status"]
+
         if immediate:
             return Result(**response)
         else:
-            while response_status in ['queued', 'running']:
-                response = await settings.client.get(f'results/{response["id"]}')
-                response_status = response['status']
+            while response_status in ["queued", "running"]:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET, url=f'results/{response["id"]}'
+                )
+                response_status = response["status"]
             return Result(**response)
 
     async def run_target_schema(self, target_schema: Dict[str, Any], immediate: bool = False) -> Dict[str, Any]:
@@ -107,18 +132,23 @@ class WorkShop(BaseModel):
         :param target_schema: Details required for running the target schema.
         :return: The result of running the target schema.
         """
-        # implement polling 
-        response = await settings.client.post(f'workshops/{self.id}/target_schema/run', data={'target_schema': target_schema})
-        response_status = response['status']
-        
-                
+        # implement polling
+        response = await settings.client.request(
+            method=HTTPMethod.POST,
+            url=f"workshops/{self.id}/target_schema/run",
+            json={"target_schema": target_schema},
+        )
+        response_status = response["status"]
+
         if immediate:
             return Result(**response)
         else:
-            while response_status in ['queued', 'running']:
-                response = await settings.client.get(f'results/{response["id"]}')
-                response_status = response['status']
-            
+            while response_status in ["queued", "running"]:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET, url=f'results/{response["id"]}'
+                )
+                response_status = response["status"]
+
             return Result(**response)
 
     async def run_prompt(self, target_fields_to_prompt: Dict[str, Any], immediate: bool = False) -> Dict[str, Any]:
@@ -127,15 +157,21 @@ class WorkShop(BaseModel):
         :param target_fields_to_prompt: Details required for running the prompt.
         :return: The result of running the prompt.
         """
-        response = await settings.client.post(f'workshops/{self.id}/prompt/run', data={'target_fields_to_prompt': target_fields_to_prompt})
-        response_status = response['status']
-        
+        response = await settings.client.request(
+            method=HTTPMethod.POST,
+            url=f"workshops/{self.id}/prompt/run",
+            json={"target_fields_to_prompt": target_fields_to_prompt},
+        )
+        response_status = response["status"]
+
         if immediate:
             return Result(**response)
         else:
-            while response_status in ['queued', 'running']:
-                response = await settings.client.get(f'results/{response["id"]}')
-                response_status = response['status']
+            while response_status in ["queued", "running"]:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET, url=f'results/{response["id"]}'
+                )
+                response_status = response["status"]
 
             return Result(**response)
 
@@ -144,7 +180,9 @@ class WorkShop(BaseModel):
         Deploys the workshop with the specified ID.
         :return: The deployed workshop details.
         """
-        response = await settings.client.post(f'workshops/{self.id}/deploy')
+        response = await settings.client.request(
+            method=HTTPMethod.POST, url=f"workshops/{self.id}/deploy"
+        )
         return WorkShop(**response)
 
     async def get_results(self, page: int = 1, size: int = 50, all: bool = False) -> List[Result]:
@@ -156,16 +194,25 @@ class WorkShop(BaseModel):
         :return: A list of results.
         """
         results = []
+        pagination = Pagination(page=page, size=size)
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data(f'workshops/{self.id}/results', page, size)
-                results.extend([Result(**item) for item in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET,
+                    url=f"workshops/{self.id}/results",
+                    pagination=pagination,
+                )
+                results.extend([Result(**item) for item in response["items"]])
+                if not response["items"] or len(response["items"]) < size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data(f'workshops/{self.id}/results', page, size)
-            results.extend([Result(**item) for item in response['items']])
+            response = await settings.client.request(
+                method=HTTPMethod.GET,
+                url=f"workshops/{self.id}/results",
+                pagination=pagination,
+            )
+            results.extend([Result(**item) for item in response["items"]])
 
         return results
 
@@ -174,13 +221,16 @@ class WorkShop(BaseModel):
         Retrieves the target schema for a specific workshop.
         :return: The target schema for the workshop.
         """
-        return await settings.client.get(f'workshops/{self.id}/target_schema')
+        return await settings.client.request(
+            method=HTTPMethod.GET, url=f"workshops/{self.id}/target_schema"
+        )
 
-    
     async def get_mapping(self) -> List[Dict[str, Any]]:
         """
         Retreives the mappings transformations associated with the workshop.
         Returns:
             List[Dict[str, Any]]: The mapping
         """
-        return await settings.client.get(f'workshops/{self.id}/mapper')
+        return await settings.client.request(
+            method=HTTPMethod.GET, url=f"workshops/{self.id}/mapper"
+        )

@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from lume_py.endpoints.config import get_settings
 from lume_py.endpoints.workshop import WorkShop
 from lume_py.endpoints.results import Result
+from .sdk.api_client import Pagination
+from http import HTTPMethod
 
 settings = get_settings()
 
@@ -30,19 +32,23 @@ class Job(BaseModel):
         :return: A list of Job objects.
         """
         jobs = []
+        pagination = Pagination(page=page, size=size)
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data('jobs', page, size)
-                jobs.extend([Job(**item) for item in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET, url="jobs", pagination=pagination
+                )
+                jobs.extend([Job(**item) for item in response["items"]])
+                if not response["items"] or len(response["items"]) < size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data('jobs', page, size)
-            jobs.extend([Job(**item) for item in response['items']])
-        
-        return jobs
+            response = await settings.client.request(
+                method=HTTPMethod.GET, url="jobs", pagination=pagination
+            )
+            jobs.extend([Job(**item) for item in response["items"]])
 
+        return jobs
 
     @classmethod
     async def create(cls, pipeline_id: str, source_data: List[Dict[str, Any]]) -> 'Job':
@@ -52,7 +58,11 @@ class Job(BaseModel):
         :param source_data: The source data for the job.
         :return: The created Job object.
         """
-        response = await settings.client.post(f'pipelines/{pipeline_id}/jobs', {'data': source_data})
+        response = await settings.client.request(
+            method=HTTPMethod.POST,
+            url=f"pipelines/{pipeline_id}/jobs",
+            json={"data": source_data},
+        )
         return cls(**response)
 
     @classmethod
@@ -62,7 +72,9 @@ class Job(BaseModel):
         :param job_id: The ID of the job.
         :return: The Job object.
         """
-        response = await settings.client.get(f'jobs/{job_id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"jobs/{job_id}"
+        )
         return cls(**response)
 
     async def delete(self) -> None:
@@ -72,7 +84,7 @@ class Job(BaseModel):
         """
         if not self.id:
             raise ValueError("Job ID is required for deletion.")
-        await settings.client.delete(f'jobs/{self.id}')
+        await settings.client.request(method=HTTPMethod.DELETE, url=f"jobs/{self.id}")
 
     async def run(self, immediate: bool = False) -> Result:
         """
@@ -80,24 +92,30 @@ class Job(BaseModel):
         :param immediate: Whether to return the result immediately or wait until the job is complete.
         :return: The Result object.
         """
-        response = await settings.client.post(f'jobs/{self.id}/run')
-        status = response['status']
-        result_id = response['id']
-        
+        response = await settings.client.request(
+            method=HTTPMethod.POST, url=f"jobs/{self.id}/run"
+        )
+        status = response["status"]
+        result_id = response["id"]
+
         if immediate:
             return Result(**response)
         else:
-            while status in ['queued', 'running']:
-                result = await settings.client.get(f'results/{result_id}')
-                status = result['status']
+            while status in ["queued", "running"]:
+                result = await settings.client.request(
+                    HTTPMethod.GET, url=f"results/{result_id}"
+                )
+                status = result["status"]
             return Result(**result)
-    
+
     async def create_workshop(self) -> WorkShop:
         """
         Creates a workshop for the current job.
         :return: The created WorkShop object.
         """
-        response = await settings.client.post(f'jobs/{self.id}/workshops')
+        response = await settings.client.request(
+            method=HTTPMethod.POST, url=f"jobs/{self.id}/workshops"
+        )
         return WorkShop(**response)
 
     async def get_workshops(self, page: int = 1, size: int = 50, all: bool = False) -> List[WorkShop]:
@@ -109,16 +127,25 @@ class Job(BaseModel):
         :return: A list of WorkShop objects.
         """
         workshops = []
+        pagination = Pagination(page=page, size=size)
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data(f'jobs/{self.id}/workshops', page, size)
-                workshops.extend([WorkShop(**item) for item in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET,
+                    url=f"jobs/{self.id}/workshops",
+                    pagination=pagination,
+                )
+                workshops.extend([WorkShop(**item) for item in response["items"]])
+                if not response["items"] or len(response["items"]) < size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data(f'jobs/{self.id}/workshops', page, size)
-            workshops.extend([WorkShop(**item) for item in response['items']])
+            response = await settings.client.request(
+                method=HTTPMethod.GET,
+                url=f"jobs/{self.id}/workshops",
+                pagination=pagination,
+            )
+            workshops.extend([WorkShop(**item) for item in response["items"]])
         return workshops
 
     async def get_target_schema(self) -> Dict[str, Any]:
@@ -126,7 +153,9 @@ class Job(BaseModel):
         Retrieves the target schema associated with the current job.
         :return: A dictionary representing the target schema.
         """
-        return await settings.client.get(f'jobs/{self.id}/target_schema')
+        return await settings.client.request(
+            method=HTTPMethod.GET, url=f"jobs/{self.id}/target_schema"
+        )
 
     @classmethod
     async def create_and_run(cls, pipeline_id: str, source_data: List[Dict[str, Any]]) -> Result:
@@ -148,14 +177,23 @@ class Job(BaseModel):
         :return: A list of Result objects.
         """
         results = []
+        pagination = Pagination(page=page, size=size)
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data(f'jobs/{self.id}/results', page, size)
-                results.extend([Result(**item) for item in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET,
+                    url=f"jobs/{self.id}/results",
+                    pagination=pagination,
+                )
+                results.extend([Result(**item) for item in response["items"]])
+                if not response["items"] or len(response["items"]) < size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data(f'jobs/{self.id}/results', page, size)
-            results.extend([Result(**item) for item in response['items']])
+            response = await settings.client.request(
+                method=HTTPMethod.GET,
+                url=f"jobs/{self.id}/results",
+                pagination=pagination,
+            )
+            results.extend([Result(**item) for item in response["items"]])
         return results

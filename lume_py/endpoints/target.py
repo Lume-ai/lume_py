@@ -1,6 +1,8 @@
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from lume_py.endpoints.config import get_settings
+from .sdk.api_client import Pagination
+from http import HTTPMethod
 
 settings = get_settings()
 
@@ -24,17 +26,22 @@ class Target(BaseModel):
         :return: A list of target schemas.
         """
         targets = []
+        pagination = Pagination(page=page, size=size)
         if all:
             while True:
-                response = await settings.client.fetch_paginated_data('target_schemas', page, size)
-                targets.extend([Target(**item) for item in response['items']])
-                if not response['items'] or len(response['items']) < size:
+                response = await settings.client.request(
+                    method=HTTPMethod.GET, url="target_schemas", pagination=pagination
+                )
+                targets.extend([Target(**item) for item in response["items"]])
+                if not response["items"] or len(response["items"]) < size:
                     break
                 page += 1
         else:
-            response = await settings.client.fetch_paginated_data('target_schemas', page, size)
-            targets.extend([Target(**item) for item in response['items']])
-        
+            response = await settings.client.request(
+                method=HTTPMethod.GET, url="target_schemas", pagination=pagination
+            )
+            targets.extend([Target(**item) for item in response["items"]])
+
         return targets
 
     @staticmethod
@@ -47,12 +54,10 @@ class Target(BaseModel):
         :param filename: The filename of the schema.
         :return: The created target schema.
         """
-        payload = {
-            'name': name,
-            'schema': target_schema,
-            'filename': filename
-        }
-        response = await settings.client.post('target_schemas', payload)
+        payload = {"name": name, "schema": target_schema, "filename": filename}
+        response = await settings.client.request(
+            method=HTTPMethod.POST, url="target_schemas", json=payload
+        )
         return Target(**response)
 
     @classmethod
@@ -62,7 +67,9 @@ class Target(BaseModel):
         :param target_schema_id: The ID of the target schema to retrieve.
         :return: The target schema details.
         """
-        response = await settings.client.get(f'target_schemas/{target_schema_id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"target_schemas/{target_schema_id}"
+        )
         return response
 
     @staticmethod
@@ -75,20 +82,24 @@ class Target(BaseModel):
         for target in response:
             if target.id == target_id:
                 return target
-    
+
     async def get_schema(self) -> Dict[str, Any]:
         """
         Retrieves the details of this target schema.
         :return: The target schema details.
         """
-        response = await settings.client.get(f'target_schemas/{self.id}')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"target_schemas/{self.id}"
+        )
         return response
 
     async def delete(self) -> None:
         """
         Deletes a specific target schema by its ID.
         """
-        await settings.client.delete(f'target_schemas/{self.id}')
+        await settings.client.request(
+            method=HTTPMethod.DELETE, url=f"target_schemas/{self.id}"
+        )
 
     async def update(self, name: str = "string", filename: str = "string", target_schema: Dict[str, Any] = {}) -> 'Target':
         """
@@ -99,12 +110,10 @@ class Target(BaseModel):
         :param target_schema: The new target schema.
         :return: The updated target schema details.
         """
-        payload = {
-            'name': name,
-            'filename': filename,
-            'schema': target_schema
-        }
-        response = await settings.client.put(f'target_schemas/{self.id}/update', data=payload)
+        payload = {"name": name, "filename": filename, "schema": target_schema}
+        response = await settings.client.request(
+            method=HTTPMethod.PUT, url=f"target_schemas/{self.id}/update", json=payload
+        )
         return response
 
     async def get_target_schema_object(self) -> 'Target':
@@ -112,7 +121,9 @@ class Target(BaseModel):
         Retrieves the object of a specific target schema by its ID.
         :return: The target schema object.
         """
-        response = await settings.client.get(f'target_schemas/{self.id}/object')
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"target_schemas/{self.id}/object"
+        )
         return Target(**response)
 
     @staticmethod
@@ -122,5 +133,9 @@ class Target(BaseModel):
         :param sample: The sample data to generate the schema.
         :return: The generated target schema details.
         """
-        response = await settings.client.post('target_schemas/generate', {'sample': sample})
+        response = await settings.client.request(
+            method=HTTPMethod.POST,
+            url="target_schemas/generate",
+            json={"sample": sample},
+        )
         return response
