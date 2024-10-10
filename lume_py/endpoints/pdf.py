@@ -1,5 +1,7 @@
 import httpx
 from lume_py.endpoints.config import get_settings
+from .sdk.api_client import Pagination
+from http import HTTPMethod
 
 settings = get_settings()
 
@@ -9,7 +11,6 @@ class PDF:
     This may include custom endpoints for specific use cases.
     """
 
-
     @staticmethod
     async def process_adv_form(pdf_path: str):
         """
@@ -17,7 +18,7 @@ class PDF:
         :param pdf_path: The path to the PDF file to process.
         :return: A dictionary representing the processed PDF result.
         """
-        
+
         async with httpx.AsyncClient() as client:
             with open(pdf_path, 'rb') as pdf_file:
                 files = {'file': (pdf_path, pdf_file, 'application/pdf')}
@@ -29,7 +30,7 @@ class PDF:
                 response.raise_for_status()
                 response = response.json()
                 status = response['status']
-                
+
                 while status in ['QUEUED', 'PENDING']:
                     response = await client.get(f'https://staging.lume-terminus.com/crud/pdf/adv/{response["id"]}', headers={'lume-api-key': settings.client.api_key})
                     response = response.json()
@@ -42,7 +43,9 @@ class PDF:
         Retrieves an advanced form PDF by its ID.
         :return: FileResult object representing the PDF.
         """
-        return await settings.client.get(f'pdf/adv/{pdf_id}')
+        return await settings.client.request(
+            method=HTTPMethod.GET, url=f"pdf/adv/{pdf_id}"
+        )
 
     @staticmethod
     async def get_adv_forms_page(page: int = 1, size: int = 50):
@@ -52,7 +55,11 @@ class PDF:
         :param size: The number of items per page (optional, defaults to 50).
         :return: PaginatedResponse containing FileResult objects.
         """
-        return await settings.client.fetch_paginated_data('pdf/adv', page, size)
+        return await settings.client.request(
+            method=HTTPMethod.GET,
+            url="pdf/adv",
+            pagination=Pagination(page=page, size=size),
+        )
 
     @staticmethod
     async def get_adv_url(pdf_id: int):
@@ -62,8 +69,10 @@ class PDF:
         :return: URL of the PDF.
         """
         try:
-            body = await settings.client.get(f'pdf/adv/{pdf_id}/url')
-            return body['url']
+            body = await settings.client.request(
+                method=HTTPMethod.GET, url=f"pdf/adv/{pdf_id}/url"
+            )
+            return body["url"]
         except Exception as exc:
             raise exc
 
@@ -102,7 +111,11 @@ class PDF:
         :param size: The number of items per page (optional, defaults to 50).
         :return: PaginatedResponse containing FileResult objects.
         """
-        return await settings.client.fetch_paginated_data('pdf/orders', page, size)
+        return await settings.client.request(
+            method=HTTPMethod.GET,
+            url="pdf/orders",
+            pagination=Pagination(page=page, size=size),
+        )
 
     @staticmethod
     async def get_pdf(pdf_id: int):
@@ -111,7 +124,9 @@ class PDF:
         :param pdf_id: The ID of the PDF order.
         :return: FileResult object representing the PDF.
         """
-        return await settings.client.get(f'pdf/orders/{pdf_id}')
+        return await settings.client.request(
+            method=HTTPMethod.GET, url=f"pdf/orders/{pdf_id}"
+        )
 
     @staticmethod
     async def get_pdf_url(pdf_id: int):
@@ -121,7 +136,9 @@ class PDF:
         :return: URL of the PDF.
         """
         try:
-            body = await settings.client.get(f'pdf/orders/{pdf_id}/url')
-            return body['url']
+            body = await settings.client.request(
+                method=HTTPMethod.GET, url=f"pdf/orders/{pdf_id}/url"
+            )
+            return body["url"]
         except Exception as exc:
             raise exc
