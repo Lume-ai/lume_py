@@ -36,6 +36,26 @@ class Mapping(BaseModel):
             method=HTTPMethod.POST, url="mapping", json=payload
         )
         return Mapping(**response)
+    
+    async def get_representative_sample(self, target_field_name: str) -> Dict[str, Any]:
+        """
+        Retrieves a Lookup dictionary.
+        :param target_field_name: The name of the target field.
+        """
+
+        if not self.pipeline_id:
+            raise ValueError("Pipeline ID is required for fetching mapper.")
+        response = await settings.client.request(
+            method=HTTPMethod.GET, url=f"pipelines/{self.pipeline_id}/mapper"
+        )
+        if response is None:
+            raise ValueError("No mapper found for this pipeline, consider running the job first.")
+        
+        for mapper in response:
+            if mapper['targetField'] == target_field_name:
+                return mapper.get('transformation', {}).get('params', {}).get('lookup', {})
+            
+        raise ValueError(f"Could not find {target_field_name} within the mapper")
 
     @classmethod
     async def get_by_id(cls, result_id: str) -> 'Mapping':
