@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from lume_py.endpoints.config import get_settings
 from lume_py.endpoints.results import Result
 from lume_py.endpoints.mappers import Mapping
@@ -104,34 +104,52 @@ class WorkShop(BaseModel):
                 response_status = response["status"]
             return Result(**response)
         
-    async def update_representative_sample(self, target_field_name: str, mapper: Dict[str, Any]) -> 'Mapping':
+    async def update_representative_sample(self, target_field_name: Union[str, List[str]], mapper: Union[Dict[str, Any], List[Dict[str, Any]]]) -> 'Mapping':
         """
-        Runs the mapper of a workshop with the specified ID.
-        :param mapper: Details required for running the mapper.
-        :return: The result of running the mapper.
+        Updates the representative sample for one or more target fields in the workshop's mapper.
+        :param target_field_name: The target field name(s) to update.
+        :param mapper: The mapper(s) containing the new representative sample(s).
+        :return: The updated Mapping.
         """
-
         if not self.pipeline_id:
             raise ValueError("Pipeline ID is required for fetching mapper.")
+
+        # Ensure target_field_name and mapper are lists if multiple fields are provided
+        if isinstance(target_field_name, str):
+            target_field_name = [target_field_name]
+            mapper = [mapper]
+        elif isinstance(target_field_name, list):
+            if not isinstance(mapper, list):
+                raise ValueError("Mapper should be a list when target_field_name is a list.")
+            if len(target_field_name) != len(mapper):
+                raise ValueError("The number of target fields must match the number of mappers.")
+
         response = await settings.client.request(
             method=HTTPMethod.GET, url=f"pipelines/{self.pipeline_id}/mapper"
         )
         if response is None:
             raise ValueError("No mapper found for this pipeline, consider running the job first.")
-        
-        updated_mapper = None
-        for val in response:
-            if val['targetField'] == target_field_name:
-                updated_mapper = val
-                if 'transformation' in val and 'params' in val['transformation'] and 'lookup' in val['transformation']['params']:
-                    updated_mapper['transformation']['params']['lookup'] = mapper
-        if not updated_mapper:
-            raise ValueError(f"Could not find {target_field_name} within the mapper")
-        
+
+        updated_mappers = []
+        for field, map_data in zip(target_field_name, mapper):
+            field_updated = False
+            for val in response:
+                if val['targetField'] == field:
+                    if 'transformation' in val and 'params' in val['transformation'] and 'lookup' in val['transformation']['params']:
+                        val['transformation']['params']['lookup'] = map_data
+                        updated_mappers.append(val)
+                        field_updated = True
+                        break
+            if not field_updated:
+                raise ValueError(f"Could not find {field} within the mapper")
+
+        if not updated_mappers:
+            raise ValueError(f"Could not update any of the specified target fields")
+
         response = await settings.client.request(
             method=HTTPMethod.POST,
             url=f"workshops/{self.id}/mapper/run",
-            json={"mapper": [updated_mapper]},
+            json={"mapper": updated_mappers},
         )
         return Mapping(**response)
 
